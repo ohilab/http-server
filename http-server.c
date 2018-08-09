@@ -373,7 +373,16 @@ static HttpServer_Error HttpServer_parseHeader (HttpServer_DeviceHandle dev,
             }
             else if (numArgs == 1) // Uri
             {
-                strcpy(dev->clients[client].message.uri,tmp);
+                if( strlen(temp) < HTTPSERVER_MAX_URI_LENGTH)
+                {
+                    strcpy(dev->clients[client].message.uri,tmp);
+                }
+
+                else
+                {
+                    return HTTPSERVER_ERROR_URI_TOO_LONG;
+
+                }
             }
             else if (numArgs == 2) // HTTP Version
             {
