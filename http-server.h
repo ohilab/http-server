@@ -47,8 +47,18 @@
 #endif
 
 #ifndef HTTPSERVER_MAX_URI_LENGTH
-#define HTTPSERVER_MAX_URI_LENGTH            100
+#define HTTPSERVER_MAX_URI_LENGTH               100
 #endif
+#ifndef HTTPSERVER_BUFFER_DIMENSION
+#define HTTPSERVER_BUFFER_DIMENSION             255
+#endif
+#ifndef HTTPSERVER_HEADERS_MAX_LENGTH
+#define HTTPSERVER_HEADERS_MAX_LENGTH           1023
+#endif
+#ifndef HTTPSERVER_BODY_MESSAGE_MAX_LENGTH
+#define HTTPSERVER_BODY_MESSAGE_MAX_LENGTH      1023
+#endif
+
 
 #define HTTPSERVER_STRING_REQUEST_GET        "GET"
 #define HTTPSERVER_STRING_REQUEST_POST       "POST"
@@ -88,9 +98,8 @@ typedef struct _HttpServer_Message
     HttpServer_Version version;/**< Contains the version requested by client */
 
     char uri[HTTPSERVER_MAX_URI_LENGTH];/**< The uri associated with the request */
-
-//    char bodyBuffer [HTTPSERVER_BODY_BUFFER_LENGTH_ROW][HTTPSERVER_BODY_BUFFER_COLUMN];
-    char bodyMessage [HTTPSERVER_BODY_MESSAGE_LENGTH];
+    char header[HTTPSERVER_HEADERS_MAX_LENGTH];
+    char body[HTTPSERVER_BODY_MESSAGE_MAX_LENGTH];
 
 } HttpServer_Message, *HttpServer_MessageHandle;
 
@@ -123,7 +132,6 @@ typedef struct _HttpServer_Device
     uint8_t socketNumber;
     EthernetSocket_Config* ethernetSocketConfig;
     HttpServer_Client clients [ETHERNET_MAX_LISTEN_CLIENT];
-//  char buffer[256];
 
     HttpServer_Error (*performingCallback)(HttpServer_Message message);
 
@@ -172,6 +180,7 @@ typedef enum
     HTTPSERVER_RESPONSECODE_GATEWAYTIMEOUT                 = 504,  // 504
     HTTPSERVER_RESPONSECODE_HTTPVERSIONNOTSUPPORTED        = 505,  // 505
 } HttpServer_ResponseCode;
+
 
 /**
  * @param server The server which you want to start at the determined port, number and ethernet config

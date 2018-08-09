@@ -43,12 +43,13 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
                                             uint16_t maxLength,
                                             uint16_t timeout,
                                             uint8_t client,
-                                            int16_t* received);
+                                            int16_t* received,
+                                            bool endCharacterFlag);
 
-static HttpServer_Error HttpServer_parseHeader (HttpServer_DeviceHandle dev,
-                                                char* buffer,
-                                                uint16_t length,
-                                                uint8_t client);
+static HttpServer_Error HttpServer_parseFirstLine (HttpServer_DeviceHandle dev,
+                                                   char* buffer,
+                                                   uint16_t length,
+                                                   uint8_t client);
 
 HttpServer_Error HttpServer_open (HttpServer_DeviceHandle dev)
 {
@@ -98,7 +99,10 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
     int16_t received = 0;
     uint16_t wrote = 0;
     uint16_t stringLength;
-
+#ifdef OHILAB_HTTPSERVER_DEBUG
+    char cliBuffer [64];
+    uint8_t cliStringLength;
+#endif
     uint8_t j = 0;
 //    uint16_t k = 0;
     char character [2];
@@ -119,11 +123,12 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
 
 
 #ifdef OHILAB_HTTPSERVER_DEBUG
-        Cli_sendMessage("HttpServer_poll:",
-                        "new client #",
-                        CLI_MESSAGETYPE_INFO);
-        Cli_sendMessage("",character,CLI_MESSAGETYPE_INFO);
-        Cli_sendMessage("is connected","",CLI_MESSAGETYPE_INFO);
+        strncpy(cliBuffer, "new client #",12);
+        strncpy(&cliBuffer[12],character,1);
+        strncpy(&cliBuffer[13], " is connected",13);
+        strncpy(&cliBuffer[26], '\0',1);
+        Cli_sendMessage("HttpServer_poll:",cliBuffer, CLI_MESSAGETYPE_INFO);
+
 #endif
         // Clear index
         received = 0;
@@ -133,7 +138,7 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
                                    255,
                                    3000,
                                    i,
-                                   &received);
+                                   &received, TRUE);
         // When there isn't message, jump to the next
         if (received < 0)
         {
@@ -143,19 +148,18 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
         }
 
         // Parse the header
-        error = HttpServer_parseHeader(dev,
+        error = HttpServer_parseFirstLine(dev,
                                        dev->clients[i].rxBuffer,
                                        strlen(dev->clients[i].rxBuffer),
                                        i);
         if (error != HTTPSERVER_ERROR_OK)
         {
 #ifdef OHILAB_HTTPSERVER_DEBUG
-            Cli_sendMessage("HttpServer_poll:",
-                            "URI too long",
-                            CLI_MESSAGETYPE_INFO);
-            Cli_sendMessage("HttpServer_poll:",
-                            "disconnecting client #",
-                            CLI_MESSAGETYPE_INFO);
+            strncpy(cliBuffer, "client #",8);
+            strncpy(&cliBuffer[7],character,1);
+            strncpy(&cliBuffer[8], " is disconnected",16);
+            strncpy(&cliBuffer[25], '\0',1);
+            Cli_sendMessage("HttpServer_poll:",cliBuffer, CLI_MESSAGETYPE_INFO);
             Cli_sendMessage("",character,CLI_MESSAGETYPE_INFO);
 
 #endif
@@ -168,7 +172,7 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
 
 #ifdef OHILAB_HTTPSERVER_DEBUG
         Cli_sendMessage("HttpServer_poll: ",
-                        "parsing the request body...",
+                        "parsing the first line...",
                         CLI_MESSAGETYPE_INFO);
 #endif
         // The request header was received
@@ -176,23 +180,23 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
         do
         {
 
-            //put everthing in message
+            //put every headers in headerBuffer
             error = HttpServer_getLine(dev,
                                        dev->clients[i].rxBuffer,
                                        HTTPSERVER_BUFFER_DIMENSION,
                                        3000,
                                        i,
-                                       &received);
+                                       &received, FALSE);
 
 //            if(j < HTTPSERVER_BODY_MESSAGE_LENGTH)
 //            {
                 stringLength = strlen(dev->clients[i].rxBuffer);
-                if((error == HTTPSERVER_ERROR_OK) || (error = HTTPSERVER_ERROR_OK))
+                if((error == HTTPSERVER_ERROR_OK_EMPTYLINE) || (error = HTTPSERVER_ERROR_OK))
                 {
-                    if( ((stringLength + j) < HTTPSERVER_BODY_MESSAGE_LENGTH) )
+                    if( ((stringLength + j) < HTTPSERVER_HEADERS_MAX_LENGTH) )
 
                     {
-                        strncpy(&dev->clients[i].message.bodyMessage[j],
+                        strncpy(&dev->clients[i].message.header[j],
                                 dev->clients[i].rxBuffer,
                                 stringLength);
                         j += stringLength + 1;
@@ -202,27 +206,27 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
                     {
 #ifdef OHILAB_HTTPSERVER_DEBUG
                         Cli_sendMessage("HttpServer_poll:",
-                                        "body message buffer too short",
+                                        "header buffer too short",
                                         CLI_MESSAGETYPE_INFO);
 #endif
                     }
                 }
-                else
-                {
-#ifdef OHILAB_HTTPSERVER_DEBUG
-                    Cli_sendMessage("HttpServer_poll:",
-                                    "body message, timeout occur or wrong parameter",
-                                    CLI_MESSAGETYPE_INFO);
-#endif
-
-                }
+//                else
+//                {
+//#ifdef OHILAB_HTTPSERVER_DEBUG
+//                    Cli_sendMessage("HttpServer_poll:",
+//                                    "header, timeout occur or wrong parameter",
+//                                    CLI_MESSAGETYPE_INFO);
+//#endif
+//
+//                }
 
 
 //            }
             //  If we received an empty line, this would indicate the end of the message
                 if (received < 0)
                 {
-            	//checking if timeout occur
+                //checking if timeout occur
 //                if(nextTimeout < HttpServer_currentTick())
 //                {
 //                    EthernetServerSocket_disconnectClient(server->socketNumber, i);
@@ -230,7 +234,7 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
 //                }
 
                 // Performing the request
-            	//server->performingCallback(server->clients[i].message);
+                //server->performingCallback(server->clients[i].message);
 
 #ifdef OHILAB_HTTPSERVER_DEBUG
                     Cli_sendMessage("HttpServer_poll:",
@@ -243,22 +247,16 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
                                                           i);
 
 #ifdef OHILAB_HTTPSERVER_DEBUG
-                    Cli_sendMessage("HttpServer_poll:",
-                                    "client disconnected",
-                                    CLI_MESSAGETYPE_INFO);
+                    strncpy(cliBuffer, "client #",8);
+                    strncpy(&cliBuffer[7],character,1);
+                    strncpy(&cliBuffer[8], " is disconnected",15);
+                    strncpy(&cliBuffer[24], '\0',1);
+                    Cli_sendMessage("HttpServer_poll:",cliBuffer, CLI_MESSAGETYPE_INFO);
 #endif
-//                for (k=0; k<257; k++)
-//                {
-//                    server->clients[i].rxBuffer[k] = 0;
-//                }
-//
-//                break;
+
                 }
 
-            //j++;
-            // Otherwise parse the message params
-
-        } while (received > 0);
+        }while (received > 0);
     }
 }
 
@@ -267,10 +265,12 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
                                             uint16_t maxLength,
                                             uint16_t timeout,
                                             uint8_t client,
-                                            int16_t* received)
+                                            int16_t* received,
+                                            bool endCharacterFlag)
 {
     int16_t i = 0, count = 0;
     *received = -1; // Default
+    const char emptyline [5] = {'\r','\n','\r','\n', '\0'};
 
     if ((buffer == NULL) || (maxLength == 0))
     {
@@ -291,7 +291,7 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
         {
             EthernetServerSocket_read(dev->socketNumber,client,&buffer[i]);
 
-            if (buffer[i] == '\n')
+            if ((buffer[i] == '\n') && (endCharacterFlag))
             {
                 // Clear last char
                 buffer[i] == '\0';
@@ -315,14 +315,14 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
     }
 
     // Clear '\r'
-    if ((i > 0) && (buffer[i] == '\r'))
+    if ((i > 0) && (buffer[i] == '\r') && endCharacterFlag)
     {
         buffer[i] = '\0';
         i--;
     }
 
     // Empty line
-    if (i == 0)
+    if ((i == 0) || ((strcmp(&buffer[i-4],emptyline)) == 0))
     {
         *received = -2;
 #ifdef OHILAB_HTTPSERVER_DEBUG
@@ -340,10 +340,10 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
 
 }
 
-static HttpServer_Error HttpServer_parseHeader (HttpServer_DeviceHandle dev,
-                                                char* buffer,
-                                                uint16_t length,
-                                                uint8_t client)
+static HttpServer_Error HttpServer_parseFirstLine (HttpServer_DeviceHandle dev,
+                                                   char* buffer,
+                                                   uint16_t length,
+                                                   uint8_t client)
 {
     char tmp[256];
     uint8_t numArgs = 0;
@@ -387,7 +387,7 @@ static HttpServer_Error HttpServer_parseHeader (HttpServer_DeviceHandle dev,
                 else
                 {
 #ifdef OHILAB_HTTPSERVER_DEBUG
-                    Cli_sendMessage("HttpServer_parseHeader: ",
+                    Cli_sendMessage("HttpServer_parseFirstLine: ",
                                     "URI too long",
                                     CLI_MESSAGETYPE_INFO);
 
