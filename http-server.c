@@ -150,11 +150,17 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
         if (error != HTTPSERVER_ERROR_OK)
         {
 #ifdef OHILAB_HTTPSERVER_DEBUG
-            Cli_sendMessage("HttpServer_poll: ",
-                            "request header not correct",
-                            CLI_MESSAGETYPE_WARNING);
+            Cli_sendMessage("HttpServer_poll:",
+                            "URI too long",
+                            CLI_MESSAGETYPE_INFO);
+            Cli_sendMessage("HttpServer_poll:",
+                            "disconnecting client #",
+                            CLI_MESSAGETYPE_INFO);
+            Cli_sendMessage("",character,CLI_MESSAGETYPE_INFO);
+
 #endif
-            // FIXME: sendResponse? 400?
+            EthernetServerSocket_disconnectClient(dev->socketNumber,
+                                                  i);
             // clear buffer
             // Jump to the next client
             continue;
@@ -373,13 +379,22 @@ static HttpServer_Error HttpServer_parseHeader (HttpServer_DeviceHandle dev,
             }
             else if (numArgs == 1) // Uri
             {
-                if( strlen(temp) < HTTPSERVER_MAX_URI_LENGTH)
+                if( strlen(tmp) < HTTPSERVER_MAX_URI_LENGTH)
                 {
                     strcpy(dev->clients[client].message.uri,tmp);
                 }
 
                 else
                 {
+#ifdef OHILAB_HTTPSERVER_DEBUG
+                    Cli_sendMessage("HttpServer_parseHeader: ",
+                                    "URI too long",
+                                    CLI_MESSAGETYPE_INFO);
+
+#endif
+                    HttpServer_sendError (dev,
+                                          HTTPSERVER_RESPONSECODE_REQUESTURITOOLARGE,
+                                          client);
                     return HTTPSERVER_ERROR_URI_TOO_LONG;
 
                 }

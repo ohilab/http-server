@@ -187,6 +187,8 @@ HttpServer_Error HttpServer_open (HttpServer_DeviceHandle dev);
 void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout);
 
 
-void HttpServer_sendError (HttpServer_DeviceHandle dev, HttpServer_ResponseCode code, uint8_t client);
+void HttpServer_sendError (HttpServer_DeviceHandle dev,
+                           HttpServer_ResponseCode code,
+                           uint8_t client);
 
 #endif // __OHILAB_HTTPSERVER_H
