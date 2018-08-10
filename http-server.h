@@ -47,16 +47,16 @@
 #endif
 
 #ifndef HTTPSERVER_MAX_URI_LENGTH
-#define HTTPSERVER_MAX_URI_LENGTH               100
+#define HTTPSERVER_MAX_URI_LENGTH           100
 #endif
-#ifndef HTTPSERVER_BUFFER_DIMENSION
-#define HTTPSERVER_BUFFER_DIMENSION             255
+#ifndef HTTPSERVER_RX_BUFFER_DIMENSION
+#define HTTPSERVER_RX_BUFFER_DIMENSION      255
 #endif
 #ifndef HTTPSERVER_HEADERS_MAX_LENGTH
-#define HTTPSERVER_HEADERS_MAX_LENGTH           1023
+#define HTTPSERVER_HEADERS_MAX_LENGTH       1023
 #endif
-#ifndef HTTPSERVER_BODY_MESSAGE_MAX_LENGTH
-#define HTTPSERVER_BODY_MESSAGE_MAX_LENGTH      1023
+#ifndef HTTPSERVER_RX_BUFFER_DIMENSION
+#define HTTPSERVER_RX_BUFFER_DIMENSION      255
 #endif
 
 
@@ -97,15 +97,16 @@ typedef struct _HttpServer_Message
     HttpServer_Request request;     /**< Specifies the request type received */
     HttpServer_Version version;/**< Contains the version requested by client */
 
-    char uri[HTTPSERVER_MAX_URI_LENGTH];/**< The uri associated with the request */
-    char header[HTTPSERVER_HEADERS_MAX_LENGTH];
-    char body[HTTPSERVER_BODY_MESSAGE_MAX_LENGTH];
+    char uri[HTTPSERVER_MAX_URI_LENGTH+1];/**< The uri associated with the request */
+    char header[HTTPSERVER_HEADERS_MAX_LENGTH+1];
+//    char body[HTTPSERVER_BODY_MESSAGE_MAX_LENGTH+1];
 
 } HttpServer_Message, *HttpServer_MessageHandle;
 
 typedef struct _HttpServer_Client
 {
-    uint8_t rxBuffer[HTTPSERVER_BUFFER_DIMENSION+1];
+    uint8_t rxBuffer[HTTPSERVER_RX_BUFFER_DIMENSION+1];
+    uint8_t txBuffer[HTTPSERVER_TX_BUFFER_DIMENSION+1];
     uint16_t rxIndex;
 
     HttpServer_Message message;
@@ -137,12 +138,15 @@ typedef struct _HttpServer_Device
 
 } HttpServer_Device, *HttpServer_DeviceHandle;
 
+
+extern const char HttpServer_responseCode[40][32];
+
 typedef enum
 {
-    HTTPSERVER_RESPONSECODE_CONTINUE                       = 100,  // 100
-    HTTPSERVER_RESPONSECODE_SWITCHINGPROTOCOLS             = 101,  // 101
-    HTTPSERVER_RESPONSECODE_OK                             = 200,  // 200
-    HTTPSERVER_RESPONSECODE_CREATED                        = 201,  // 201
+    HTTPSERVER_RESPONSECODE_CONTINUE,  // 100
+    HTTPSERVER_RESPONSECODE_SWITCHINGPROTOCOLS,  // 101
+    HTTPSERVER_RESPONSECODE_OK,  // 200
+    HTTPSERVER_RESPONSECODE_CREATED,  // 201
     HTTPSERVER_RESPONSECODE_ACCEPTED                       = 202,  // 202
     HTTPSERVER_RESPONSECODE_NONAUTHORITATIVEINFORMATION    = 203,  // 203
     HTTPSERVER_RESPONSECODE_NOCONTENT                      = 204,  // 204
@@ -200,4 +204,8 @@ void HttpServer_sendError (HttpServer_DeviceHandle dev,
                            HttpServer_ResponseCode code,
                            uint8_t client);
 
+void HttpServer_sendResponse(HttpServer_DeviceHandle dev,
+                             HttpServer_ResponseCode code,
+                             char* headers,
+                             uint8_t client);
 #endif // __OHILAB_HTTPSERVER_H
