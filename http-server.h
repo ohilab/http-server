@@ -58,6 +58,9 @@
 #ifndef HTTPSERVER_RX_BUFFER_DIMENSION
 #define HTTPSERVER_RX_BUFFER_DIMENSION      255
 #endif
+#ifndef HTTPSERVER_TIMEOUT
+#define HTTPSERVER_TIMEOUT                  3000
+#endif
 
 
 #define HTTPSERVER_STRING_REQUEST_GET        "GET"
@@ -92,6 +95,50 @@ typedef enum
 
 } HttpServer_Version;
 
+typedef enum
+{
+    HTTPSERVER_RESPONSECODE_CONTINUE,                           // 100
+    HTTPSERVER_RESPONSECODE_SWITCHINGPROTOCOLS,                 // 101
+    HTTPSERVER_RESPONSECODE_OK,                                 // 200
+    HTTPSERVER_RESPONSECODE_CREATED,                            // 201
+    HTTPSERVER_RESPONSECODE_ACCEPTED,                           // 202
+    HTTPSERVER_RESPONSECODE_NONAUTHORITATIVEINFORMATION,        // 203
+    HTTPSERVER_RESPONSECODE_NOCONTENT,                          // 204
+    HTTPSERVER_RESPONSECODE_RESETCONTENT,                       // 205
+    HTTPSERVER_RESPONSECODE_PARTIALCONTENT,                     // 206
+    HTTPSERVER_RESPONSECODE_MULTIPLECHOICES,                    // 300
+    HTTPSERVER_RESPONSECODE_MOVEDPERMANENTLY,                   // 301
+    HTTPSERVER_RESPONSECODE_FOUND,                              // 302
+    HTTPSERVER_RESPONSECODE_SEEOTHER,                           // 303
+    HTTPSERVER_RESPONSECODE_NOTMODIFIED,                        // 304
+    HTTPSERVER_RESPONSECODE_USEPROXY,                           // 305
+    HTTPSERVER_RESPONSECODE_TEMPORARYREDIRECT,                  // 307
+    HTTPSERVER_RESPONSECODE_BADREQUEST,                         // 400
+    HTTPSERVER_RESPONSECODE_UNAUTHORIZED,                       // 401
+    HTTPSERVER_RESPONSECODE_PAYMENTREQUIRED,                    // 402
+    HTTPSERVER_RESPONSECODE_FORBIDDEN,                          // 403
+    HTTPSERVER_RESPONSECODE_NOTFOUND,                           // 404
+    HTTPSERVER_RESPONSECODE_METHODNOTALLOWED,                   // 405
+    HTTPSERVER_RESPONSECODE_NOTACCEPTABLE,                      // 406
+    HTTPSERVER_RESPONSECODE_PROXYAUTHREQUIRED,                  // 407
+    HTTPSERVER_RESPONSECODE_REQUESTTIMEOUT,                     // 408
+    HTTPSERVER_RESPONSECODE_CONFLICT,                           // 409
+    HTTPSERVER_RESPONSECODE_GONE,                               // 410
+    HTTPSERVER_RESPONSECODE_LENGTHREQUIRED,                     // 411
+    HTTPSERVER_RESPONSECODE_PRECONDITIONFAILED,                 // 412
+    HTTPSERVER_RESPONSECODE_REQUESTENTITYTOOLARGE,              // 413
+    HTTPSERVER_RESPONSECODE_REQUESTURITOOLARGE,                 // 414
+    HTTPSERVER_RESPONSECODE_UNSUPPORTEDMEDIATYPE,               // 415
+    HTTPSERVER_RESPONSECODE_REQUESTEDRANGENOTSATISFIABLE,       // 416
+    HTTPSERVER_RESPONSECODE_EXPECTATIONFAILED,                  // 417
+    HTTPSERVER_RESPONSECODE_INTERNALSERVERERROR,                // 500
+    HTTPSERVER_RESPONSECODE_NOTIMPLEMENTED,                     // 501
+    HTTPSERVER_RESPONSECODE_BADGATEWAY,                         // 502
+    HTTPSERVER_RESPONSECODE_SERVICEUNAVAILABLE,                 // 503
+    HTTPSERVER_RESPONSECODE_GATEWAYTIMEOUT,                     // 504
+    HTTPSERVER_RESPONSECODE_HTTPVERSIONNOTSUPPORTED,            // 505
+} HttpServer_ResponseCode;
+
 typedef struct _HttpServer_Message
 {
     HttpServer_Request request;     /**< Specifies the request type received */
@@ -100,6 +147,8 @@ typedef struct _HttpServer_Message
     char uri[HTTPSERVER_MAX_URI_LENGTH+1];/**< The uri associated with the request */
     char header[HTTPSERVER_HEADERS_MAX_LENGTH+1];
 //    char body[HTTPSERVER_BODY_MESSAGE_MAX_LENGTH+1];
+
+    HttpServer_ResponseCode responseCode;
 
 } HttpServer_Message, *HttpServer_MessageHandle;
 
@@ -133,58 +182,14 @@ typedef struct _HttpServer_Device
     uint8_t socketNumber;
     EthernetSocket_Config* ethernetSocketConfig;
     HttpServer_Client clients [ETHERNET_MAX_LISTEN_CLIENT];
+    void* appDevice;
 
-    HttpServer_Error (*performingCallback)(HttpServer_Message message);
+    HttpServer_Error (*performingCallback)(void* appDevice,HttpServer_MessageHandle message);
 
 } HttpServer_Device, *HttpServer_DeviceHandle;
 
 
-extern const char HttpServer_responseCode[40][32];
-
-typedef enum
-{
-    HTTPSERVER_RESPONSECODE_CONTINUE,  // 100
-    HTTPSERVER_RESPONSECODE_SWITCHINGPROTOCOLS,  // 101
-    HTTPSERVER_RESPONSECODE_OK,  // 200
-    HTTPSERVER_RESPONSECODE_CREATED,  // 201
-    HTTPSERVER_RESPONSECODE_ACCEPTED                       = 202,  // 202
-    HTTPSERVER_RESPONSECODE_NONAUTHORITATIVEINFORMATION    = 203,  // 203
-    HTTPSERVER_RESPONSECODE_NOCONTENT                      = 204,  // 204
-    HTTPSERVER_RESPONSECODE_RESETCONTENT                   = 205,  // 205
-    HTTPSERVER_RESPONSECODE_PARTIALCONTENT                 = 206,  // 206
-    HTTPSERVER_RESPONSECODE_MULTIPLECHOICES                = 300,  // 300
-    HTTPSERVER_RESPONSECODE_MOVEDPERMANENTLY               = 301,  // 301
-    HTTPSERVER_RESPONSECODE_FOUND                          = 302,  // 302
-    HTTPSERVER_RESPONSECODE_SEEOTHER                       = 303,  // 303
-    HTTPSERVER_RESPONSECODE_NOTMODIFIED                    = 304,  // 304
-    HTTPSERVER_RESPONSECODE_USEPROXY                       = 305,  // 305
-    HTTPSERVER_RESPONSECODE_TEMPORARYREDIRECT              = 307,  // 307
-    HTTPSERVER_RESPONSECODE_BADREQUEST                     = 400,  // 400
-    HTTPSERVER_RESPONSECODE_UNAUTHORIZED                   = 401,  // 401
-    HTTPSERVER_RESPONSECODE_PAYMENTREQUIRED                = 402,  // 402
-    HTTPSERVER_RESPONSECODE_FORBIDDEN                      = 403,  // 403
-    HTTPSERVER_RESPONSECODE_NOTFOUND                       = 404,  // 404
-    HTTPSERVER_RESPONSECODE_METHODNOTALLOWED               = 405,  // 405
-    HTTPSERVER_RESPONSECODE_NOTACCEPTABLE                  = 406,  // 406
-    HTTPSERVER_RESPONSECODE_PROXYAUTHREQUIRED              = 407,  // 407
-    HTTPSERVER_RESPONSECODE_REQUESTTIMEOUT                 = 408,  // 408
-    HTTPSERVER_RESPONSECODE_CONFLICT                       = 409,  // 409
-    HTTPSERVER_RESPONSECODE_GONE                           = 410,  // 410
-    HTTPSERVER_RESPONSECODE_LENGTHREQUIRED                 = 411,  // 411
-    HTTPSERVER_RESPONSECODE_PRECONDITIONFAILED             = 412,  // 412
-    HTTPSERVER_RESPONSECODE_REQUESTENTITYTOOLARGE          = 413,  // 413
-    HTTPSERVER_RESPONSECODE_REQUESTURITOOLARGE             = 414,  // 414
-    HTTPSERVER_RESPONSECODE_UNSUPPORTEDMEDIATYPE           = 415,  // 415
-    HTTPSERVER_RESPONSECODE_REQUESTEDRANGENOTSATISFIABLE   = 416,  // 416
-    HTTPSERVER_RESPONSECODE_EXPECTATIONFAILED              = 417,  // 417
-    HTTPSERVER_RESPONSECODE_INTERNALSERVERERROR            = 500,  // 500
-    HTTPSERVER_RESPONSECODE_NOTIMPLEMENTED                 = 501,  // 501
-    HTTPSERVER_RESPONSECODE_BADGATEWAY                     = 502,  // 502
-    HTTPSERVER_RESPONSECODE_SERVICEUNAVAILABLE             = 503,  // 503
-    HTTPSERVER_RESPONSECODE_GATEWAYTIMEOUT                 = 504,  // 504
-    HTTPSERVER_RESPONSECODE_HTTPVERSIONNOTSUPPORTED        = 505,  // 505
-} HttpServer_ResponseCode;
-
+extern const char HttpServer_responseCode[40][36];
 
 /**
  * @param server The server which you want to start at the determined port, number and ethernet config

@@ -31,48 +31,48 @@
 #include "cli/cli.h"
 #endif
 
-const char HttpServer_responseCode[40][32] =
+const char HttpServer_responseCode[40][36] =
         {
-                {'C','o','n','t','i','n','u','e','\0'},
-                {'S','w','i','t','c','h','i','n','g',' ','P','r','o','t','o','c','o','l','s','\0'},
-                {'O','K','\0'},
-                {'C','r','e','a','t','e','d','\0'},
-                {'A','c','c','e','p','t','e','d','\0'},
-                {'N','o','n',' ','A','u','t','h','o','r','i','t','a','t','i','v','e',' ','I','n','f','o','r','m','a','t','i','o','n','\0'},
-                {'N','o',' ','C','o','n','t','e','n','t','\0'},
-                {'R','e','s','e','t',' ','c','o','n','t','e','n','t','\0'},
-                {'P','a','r','t','i','a','l',' ','C','o','n','t','e','n','t','\0'},
-                {'M','u','l','t','i','p','l','e',' ','C','h','o','i','c','e','s','\0'},
-                {'M','o','v','e','d',' ','P','e','r','m','a','n','e','n','t','l','y','\0'},
-                {'F','o','u','n','d','\0'},
-                {'S','e','e',' ','o','t','h','e','r','\0'},
-                {'N','o','t',' ','M','o','d','i','f','i','e','d','\0'},
-                {'U','s','e',' ','P','r','o','x','y','\0'},
-                {'T','e','m','p','o','r','a','r','y',' ','r','e','d','i','r','e','c','t','\0'},
-                {'B','a','d',' ','r','e','q','u','e','s','t','\0'},
-                {'U','n','a','u','t','h','o','r','i','z','e','d','\0'},
-                {'P','a','y','m','e','n','t',' ','R','e','q','u','i','r','e','d','\0'},
-                {'F','o','r','b','i','d','d','e','n','\0'},
-                {'N','o','t',' ','F','o','u','n','d','\0'},
-                {'M','e','t','h','o','d',' ','N','o','t',' ','A','l','l','o','w','e','d','\0'},
-                {'N','o','t',' ','a','c','c','e','p','t','a','b','l','e','\0'},
-                {'P','r','o','x','y',' ','A','u','t','h',' ','R','e','q','u','i','r','e','d','\0'},
-                {'R','e','q','u','e','s','t',' ','T','i','m','e','o','u','t','\0'},
-                {'C','o','n','f','l','i','c','t','\0'},
-                {'G','o','n','e','\0'},
-                {'L','e','n','g','t','h',' ','r','e','q','u','i','r','e','d','\0'},
-                {'P','r','e',' ','C','o','n','d','i','t','i','o','n',' ','F','a','i','l','e','d','\0'},
-                {'R','e','q','u','e','s','t','e','n','t',' ','E','n','t','i','t','y',' ','T','o','o',' ','L','a','r','g','e','\0'},
-                {'R','e','q','u','e','s','t',' ','U','R','I',' ','T','o','o',' ','L','a','r','g','e','\0'},
-                {'U','n','s','u','p','p','o','r','t','e','d',' ','M','e','d','i','a','T','y','p','e','\0'},
-                {'R','e','q','u','e','s','t','e','d',' ','R','a','n','g','e',' ','N','o','t',' ','S','a','t','i','s','f','i','a','b','l','e','\0'},
-                {'E','x','p','e','c','t','a','t','i','o','n',' ','F','a','i','l','e','d','\0'},
-                {'I','n','t','e','r','n','a','l','s','e','r','v','e','r','e','r','r','o','r','\0'},
-                {'N','o','t',' ','I','m','p','l','e','m','e','n','t','e','d','\0'},
-                {'B','a','d',' ','G','a','t','e','w','a','y','\0'},
-                {'S','e','r','v','i','c','e',' ','U','n','a','v','a','i','l','a','b','l','e','\0'},
-                {'G','a','t','e','w','a','y',' ','T','i','m','e','o','u','t','\0'},
-                {'H','T','T','P',' ','V','e','r','s','i','o','n',' ','N','o','t',' ','S','u','p','p','o','r','t','e','d','\0'}
+                {'1','0','0',' ','C','o','n','t','i','n','u','e','\0'},
+                {'1','0','1',' ','S','w','i','t','c','h','i','n','g',' ','P','r','o','t','o','c','o','l','s','\0'},
+                {'2','0','0',' ','O','K','\0'},
+                {'2','0','1',' ','C','r','e','a','t','e','d','\0'},
+                {'2','0','2',' ','A','c','c','e','p','t','e','d','\0'},
+                {'2','0','3',' ','N','o','n',' ','A','u','t','h','o','r','i','t','a','t','i','v','e',' ','I','n','f','o','r','m','a','t','i','o','n','\0'},
+                {'2','0','4',' ','N','o',' ','C','o','n','t','e','n','t','\0'},
+                {'2','0','5',' ','R','e','s','e','t',' ','c','o','n','t','e','n','t','\0'},
+                {'2','0','6',' ','P','a','r','t','i','a','l',' ','C','o','n','t','e','n','t','\0'},
+                {'3','0','0',' ','M','u','l','t','i','p','l','e',' ','C','h','o','i','c','e','s','\0'},
+                {'3','0','1',' ','M','o','v','e','d',' ','P','e','r','m','a','n','e','n','t','l','y','\0'},
+                {'3','0','2',' ','F','o','u','n','d','\0'},
+                {'3','0','3',' ','S','e','e',' ','o','t','h','e','r','\0'},
+                {'3','0','4',' ','N','o','t',' ','M','o','d','i','f','i','e','d','\0'},
+                {'3','0','5',' ','U','s','e',' ','P','r','o','x','y','\0'},
+                {'3','0','7',' ','T','e','m','p','o','r','a','r','y',' ','r','e','d','i','r','e','c','t','\0'},
+                {'4','0','0',' ','B','a','d',' ','r','e','q','u','e','s','t','\0'},
+                {'4','0','1',' ','U','n','a','u','t','h','o','r','i','z','e','d','\0'},
+                {'4','0','2',' ','P','a','y','m','e','n','t',' ','R','e','q','u','i','r','e','d','\0'},
+                {'4','0','3',' ','F','o','r','b','i','d','d','e','n','\0'},
+                {'4','0','4',' ','N','o','t',' ','F','o','u','n','d','\0'},
+                {'4','0','5',' ','M','e','t','h','o','d',' ','N','o','t',' ','A','l','l','o','w','e','d','\0'},
+                {'4','0','6',' ','N','o','t',' ','a','c','c','e','p','t','a','b','l','e','\0'},
+                {'4','0','7',' ','P','r','o','x','y',' ','A','u','t','h',' ','R','e','q','u','i','r','e','d','\0'},
+                {'4','0','8',' ','R','e','q','u','e','s','t',' ','T','i','m','e','o','u','t','\0'},
+                {'4','0','9',' ','C','o','n','f','l','i','c','t','\0'},
+                {'4','1','0',' ','G','o','n','e','\0'},
+                {'4','1','1',' ','L','e','n','g','t','h',' ','r','e','q','u','i','r','e','d','\0'},
+                {'4','1','2',' ','P','r','e',' ','C','o','n','d','i','t','i','o','n',' ','F','a','i','l','e','d','\0'},
+                {'4','1','3',' ','R','e','q','u','e','s','t','e','n','t',' ','E','n','t','i','t','y',' ','T','o','o',' ','L','a','r','g','e','\0'},
+                {'4','1','4',' ','R','e','q','u','e','s','t',' ','U','R','I',' ','T','o','o',' ','L','a','r','g','e','\0'},
+                {'4','1','5',' ','U','n','s','u','p','p','o','r','t','e','d',' ','M','e','d','i','a','T','y','p','e','\0'},
+                {'4','1','6',' ','R','e','q','u','e','s','t','e','d',' ','R','a','n','g','e',' ','N','o','t',' ','S','a','t','i','s','f','i','a','b','l','e','\0'},
+                {'4','1','7',' ','E','x','p','e','c','t','a','t','i','o','n',' ','F','a','i','l','e','d','\0'},
+                {'5','0','0',' ','I','n','t','e','r','n','a','l','s','e','r','v','e','r','e','r','r','o','r','\0'},
+                {'5','0','1',' ','N','o','t',' ','I','m','p','l','e','m','e','n','t','e','d','\0'},
+                {'5','0','2',' ','B','a','d',' ','G','a','t','e','w','a','y','\0'},
+                {'5','0','3',' ','S','e','r','v','i','c','e',' ','U','n','a','v','a','i','l','a','b','l','e','\0'},
+                {'5','0','4',' ','G','a','t','e','w','a','y',' ','T','i','m','e','o','u','t','\0'},
+                {'5','0','5',' ','H','T','T','P',' ','V','e','r','s','i','o','n',' ','N','o','t',' ','S','u','p','p','o','r','t','e','d','\0'}
         };
 
 typedef uint32_t (*HttpServer_CurrentTick) (void);
@@ -147,7 +147,7 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
     char character [2];
 
 
-    uint8_t nextTimeout = HttpServer_currentTick() + timeout;
+    uint16_t nextTimeout = HttpServer_currentTick() + timeout;
 
     HttpServer_Error error = HTTPSERVER_ERROR_OK;
 
@@ -175,7 +175,7 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
         error = HttpServer_getLine(dev,
                                    dev->clients[i].rxBuffer,
                                    255,
-                                   3000,
+                                   HTTPSERVER_TIMEOUT,
                                    i,
                                    &received);
         // When there isn't message, jump to the next client
@@ -233,7 +233,7 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
             error = HttpServer_getLine(dev,
                                        dev->clients[i].rxBuffer,
                                        HTTPSERVER_RX_BUFFER_DIMENSION,
-                                       3000,
+                                       HTTPSERVER_TIMEOUT,
                                        i,
                                        &received);
 
@@ -255,83 +255,33 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
 #endif
                     }
                 }
-#if 0
-//                    received += 3;
+
+            //  If we received an empty line, this would indicate the end of the message
+
+                    if (received < 0)
                     {
-
-                        switch(emptyLineCounter)
-                        {
-                        case 0:
-                            received += 3;
-                            if((received + j) < HTTPSERVER_HEADERS_MAX_LENGTH)
-                            {
-                                strncpy(&dev->clients[i].message.header[j],
-                                        dev->clients[i].rxBuffer,
-                                        received);
-                                j += received;
-                            }
-                            else
-                            {
+                        // Performing the request
+                        dev->performingCallback(dev->appDevice, &dev->clients[i].message);
 #ifdef OHILAB_HTTPSERVER_DEBUG
-                                Cli_sendMessage("HttpServer_poll:",
-                                                "header buffer too short",
-                                                CLI_MESSAGETYPE_INFO);
-#endif
-                            }
-
-                            break;
-                        case 1:
-                            //received += 2;
-                            if ((received + k) < HTTPSERVER_BODY_MESSAGE_MAX_LENGTH)
-                            {
-                                strncpy(&dev->clients[i].message.body[k],
-                                    dev->clients[i].rxBuffer,
-                                    received);
-                                k += received;
-                            }
-                            else
-                            {
-#ifdef OHILAB_HTTPSERVER_DEBUG
-                                Cli_sendMessage("HttpServer_poll:",
-                                                "body buffer too short",
-                                                CLI_MESSAGETYPE_INFO);
-#endif
-                            }
-                        }
-
-                    }
-#endif
-//  If we received an empty line, this would indicate the end of the message
-                if (received < 0)
-                {
-                //checking if timeout occur
-//                if(nextTimeout < HttpServer_currentTick())
-//                {
-//                    EthernetServerSocket_disconnectClient(server->socketNumber, i);
-//                    break;
-//                }
-
-                // Performing the request
-                //server->performingCallback(server->clients[i].message);
-#ifdef OHILAB_HTTPSERVER_DEBUG
-                    Cli_sendMessage("HttpServer_poll:",
-                                    "performing the request",
-                                    CLI_MESSAGETYPE_INFO);
+                        Cli_sendMessage("HttpServer_poll:",
+                                        "performing the request",
+                                        CLI_MESSAGETYPE_INFO);
 #endif
                     // Just for test
-                    HttpServer_sendResponse(dev,HTTPSERVER_RESPONSECODE_NOTFOUND,
-                                            "Content-Length: 0\r\nServer: OHILab\r\n\n\r",
-                                            i);
-                    EthernetServerSocket_disconnectClient(dev->socketNumber,
+                        HttpServer_sendResponse(dev,
+                                                HTTPSERVER_RESPONSECODE_OK,
+                                                "Content-Length: 0\r\nServer: OHILab\r\n\n\r",
+                                                i);
+                        EthernetServerSocket_disconnectClient(dev->socketNumber,
                                                           i);
 #ifdef OHILAB_HTTPSERVER_DEBUG
-                    strncpy(cliBuffer, "client #",8);
-                    strncpy(&cliBuffer[7],character,1);
-                    strncpy(&cliBuffer[8], " is disconnected",15);
-                    strncpy(&cliBuffer[24], '\0',1);
-                    Cli_sendMessage("HttpServer_poll:",cliBuffer, CLI_MESSAGETYPE_INFO);
+                        strncpy(cliBuffer, "client #",8);
+                        strncpy(&cliBuffer[7],character,1);
+                        strncpy(&cliBuffer[8], " is disconnected",15);
+                        strncpy(&cliBuffer[24], '\0',1);
+                        Cli_sendMessage("HttpServer_poll:",cliBuffer, CLI_MESSAGETYPE_INFO);
 #endif
-                }
+                    }
         }while (received > 0);
     }
 }
@@ -369,16 +319,7 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
                     i--;
                     break;
                 }
-
             i++;
-//            if (buffer[i] == '\n')
-//            {
-//                // Clear last char
-//                buffer[i] = '\0';
-//                --i;
-//                break;
-//            }
-//            i++;
         }
     }
 
@@ -394,11 +335,7 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
         return HTTPSERVER_ERROR_TIMEOUT;
     }
 //    Clear '\r'
-    if ((i > 0) && (buffer[i] == '\r'))
-    {
-//        buffer[i] = '\0';
-        i--;
-    }
+    if ((i > 0) && (buffer[i] == '\r')) i--;
 
     // Empty line
     if (i == 0)
@@ -534,9 +471,7 @@ void HttpServer_sendResponse(HttpServer_DeviceHandle dev,
     uint8_t bufferLength = 0;
     uint8_t bufferResponseCodeLenght = 0;
     uint16_t wrote = 0;
-    sprintf(dev->clients[client].txBuffer,
-            "HTTP/1.1 %d ",
-            code);
+    sprintf(dev->clients[client].txBuffer,"HTTP/1.1 ");
     bufferLength = strlen(dev->clients[client].txBuffer);
     bufferResponseCodeLenght = strlen(HttpServer_responseCode[code]);
     strncpy(&dev->clients[client].txBuffer[bufferLength],
