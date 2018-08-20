@@ -142,20 +142,21 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
 #ifdef OHILAB_HTTPSERVER_DEBUG
     char cliBuffer [64];
     uint8_t cliStringLength;
+    char character [2];
 #endif
     uint8_t j = 0;
-    char character [2];
 
-
-    uint16_t nextTimeout = HttpServer_currentTick() + timeout;
 
     HttpServer_Error error = HTTPSERVER_ERROR_OK;
 
-    for (uint8_t i = 0; i < ETHERNET_MAX_LISTEN_CLIENT; ++i)
+    for (uint8_t i = 0; i < ETHERNET_MAX_LISTEN_CLIENT; i++)
     {
+#ifdef OHILAB_HTTPSERVER_DEBUG
         //converting uint8_t to char
         character[0] = i + '0';
         character[1] = '\0';
+#endif
+
         // When a client is not connected, jump to the next
         if (!EthernetServerSocket_isConnected(dev->socketNumber,i))
         {
@@ -174,7 +175,7 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
         // Get first line
         error = HttpServer_getLine(dev,
                                    dev->clients[i].rxBuffer,
-                                   255,
+                                   HTTPSERVER_RX_BUFFER_DIMENSION,
                                    HTTPSERVER_TIMEOUT,
                                    i,
                                    &received);
@@ -261,7 +262,7 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
                     if (received < 0)
                     {
                         // Performing the request
-                        dev->performingCallback(dev->appDevice, &dev->clients[i].message);
+                        //dev->performingCallback(dev->appDevice, &dev->clients[i].message);
 #ifdef OHILAB_HTTPSERVER_DEBUG
                         Cli_sendMessage("HttpServer_poll:",
                                         "performing the request",
@@ -269,7 +270,7 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
 #endif
                     // Just for test
                         HttpServer_sendResponse(dev,
-                                                HTTPSERVER_RESPONSECODE_OK,
+                                                HTTPSERVER_RESPONSECODE_BADREQUEST,
                                                 "Content-Length: 0\r\nServer: OHILab\r\n\n\r",
                                                 i);
                         EthernetServerSocket_disconnectClient(dev->socketNumber,
@@ -311,7 +312,9 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
     uint32_t nextTimeout = HttpServer_currentTick() + timeout;
     while ((nextTimeout > HttpServer_currentTick()) && (i < maxLength))
     {
-        if (EthernetServerSocket_available(dev->socketNumber,client) != 0)
+        int16_t available = 0;
+        EthernetServerSocket_available(dev->socketNumber,client, &available);
+        if (available != 0)
         {
             EthernetServerSocket_read(dev->socketNumber,client,&buffer[i]);
             if (buffer[i] == '\n')
