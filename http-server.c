@@ -1,9 +1,10 @@
-/*******************************************************************************
+/*
  * A simple HTTP/RPC library
  * Copyright (C) 2018 A. C. Open Hardware Ideas Lab
  *
  * Authors:
  *  Marco Giammarini <m.giammarini@warcomeb.it>
+ *  Gianluca Calignano <g.calignano97@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +23,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ */
 
 #include "http-server.h"
 #include "utility.h"
@@ -80,13 +81,18 @@ typedef void (*HttpServer_Delay) (uint32_t);
 
 static HttpServer_CurrentTick HttpServer_currentTick;
 static HttpServer_Delay HttpServer_delay;
+
 /**
+ * @ingroup httpServer_functions
+ * This function stores the incoming line
  *@param server The server pointer which you have previously definited
  *@param[out] buffer The buffer where the line is going to save
  *@param maxLength The maximum buffer length
  *@param timeout Timeout
  *@param client The number of the listened client
  *@param[out] The number of the character received including \r\n characters
+ *@return HTTPSERRVER_ERROR_OK or HTTPSERVER_ERROR_OK_EMPTY_LINE if everything
+  gone well other erros otherwise
  */
 static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
                                             char* buffer,
@@ -96,10 +102,13 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
                                             int16_t* received);
 
 /**
+ * @ingroup httpServer_functions
+ * This function parses the first line of the request.
  *@param server The server pointer which you have previously definited
  *@param buffer The char pointer of the string it is going to parse
  *@param length The length of the string
  *@param client The client number where parsed message it is going to save
+ *@return HTTPSERVER_ERROR_OK if everythine gone well, other errors otherwise.
  */
 static HttpServer_Error HttpServer_parseRequest (HttpServer_DeviceHandle dev,
                                                  char* buffer,

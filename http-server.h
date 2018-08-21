@@ -1,9 +1,10 @@
-/*******************************************************************************
+/*
  * A simple HTTP/SERVER library
  * Copyright (C) 2018 A. C. Open Hardware Ideas Lab
  *
  * Authors:
  *  Marco Giammarini <m.giammarini@warcomeb.it>
+ *  Gianluca Calignano <g.calignano97@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +23,29 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ */
 
+/**
+ * @mainpage HTTP/SERVER library with @a libohiboard
+ *
+ * This project...
+ *
+ * @section changelog ChangeLog
+ *
+ * @li v1.0 of 2018/08/21 - First release
+ *
+ * @section library External Library
+ *
+ * The library use the following external library
+ * @li libohiboard https://github.com/ohilab/libohiboard a C framework for
+ * NXP Kinetis microcontroller
+ * @li ethern-socket https://github.com/ohilab/ethernet-socket a C
+ * library to manage client/server socket
+ *
+ * @section thanksto Thanks to...
+ * @li Marco Giammarini
+ * @li Gianluca Calignano
+ */
 
 #ifndef __OHILAB_HTTPSERVER_H
 #define __OHILAB_HTTPSERVER_H
@@ -35,8 +57,7 @@
 #define OHILAB_HTTPSERVER_LIBRARY_TIME        0
 
 #include "libohiboard.h"
-
-#include "ethernet-socket/ethernet-socket.h"
+//Ethernet server socket
 #include "ethernet-socket/ethernet-serversocket.h"
 
 /*
@@ -46,51 +67,139 @@
 #include "board.h"
 #endif
 
+/**
+ * @defgroup httpServer_functions HTTP server functions
+ * The HTTP server function group
+ *
+ * @defgroup httpServer_macros HTTP server macros
+ * @ingroup httpServer_functions
+ * Macros MUST be defined to enable the library to work properly.
+ * They could be defined in board.h but there is a check in http-server.h which
+ * avoid silly problems if macros are not defined.
+ */
+
+/**
+ * @ingroup httpServer_macros
+ * The max length of a URI which can be collect and store in
+ * @ref HttpServer_Message .
+ */
 #ifndef HTTPSERVER_MAX_URI_LENGTH
 #define HTTPSERVER_MAX_URI_LENGTH           100
 #endif
-#ifndef HTTPSERVER_RX_BUFFER_DIMENSION
-#define HTTPSERVER_RX_BUFFER_DIMENSION      255
-#endif
+/**
+ * @ingroup httpServer_macros
+ * The max length of headers which can be collect and store in
+ * @ref HttpServer_Message .
+ */
 #ifndef HTTPSERVER_HEADERS_MAX_LENGTH
 #define HTTPSERVER_HEADERS_MAX_LENGTH       1023
 #endif
+/**
+ * @ingroup httpServer_macros
+ * The max length of the receive buffer for each @ref HttpServer_Client.
+ */
 #ifndef HTTPSERVER_RX_BUFFER_DIMENSION
 #define HTTPSERVER_RX_BUFFER_DIMENSION      255
 #endif
+/**
+ * @ingroup httpServer_macros
+ * The max length of the trasmission buffer for each @ref HttpServer_Client.
+ */
+#ifndef HTTPSERVER_TX_BUFFER_DIMENSION
+#define HTTPSERVER_TX_BUFFER_DIMENSION      255
+#endif
+/**
+ * @ingroup httpServer_macros
+ * Timeout .
+ */
 #ifndef HTTPSERVER_TIMEOUT
 #define HTTPSERVER_TIMEOUT                  3000
 #endif
 
-
+/**
+ * @ingroup httpServer_macros
+ */
 #define HTTPSERVER_STRING_REQUEST_GET        "GET"
+
+/**
+ * @ingroup httpServer_macros
+ */
 #define HTTPSERVER_STRING_REQUEST_POST       "POST"
+
+/**
+ * @ingroup httpServer_macros
+ */
 #define HTTPSERVER_STRING_REQUEST_PUT        "PUT"
+
+/**
+ * @ingroup httpServer_macros
+ */
 #define HTTPSERVER_STRING_REQUEST_OPTIONS    "OPTIONS"
+
+/**
+ * @ingroup httpServer_macros
+ */
 #define HTTPSERVER_STRING_REQUEST_HEAD       "HEAD"
+
+/**
+ * @ingroup httpServer_macros
+ */
 #define HTTPSERVER_STRING_REQUEST_DELETE     "DELETE"
+
+/**
+ * @ingroup httpServer_macros
+ */
 #define HTTPSERVER_STRING_REQUEST_TRACE      "TRACE"
+
+/**
+ * @ingroup httpServer_macros
+ */
 #define HTTPSERVER_STRING_REQUEST_CONNECT    "CONNECT"
 
+/**
+ * @ingroup httpServer_functions
+ */
 typedef enum
 {
+    ///GET request
     HTTPSERVER_REQUEST_GET,
+    ///POST request
     HTTPSERVER_REQUEST_POST,
+    ///PUT request
     HTTPSERVER_REQUEST_PUT,
+    ///OPTIONS request
     HTTPSERVER_REQUEST_OPTIONS,
+    ///HEAD request
     HTTPSERVER_REQUEST_HEAD,
+    ///DELETE request
     HTTPSERVER_REQUEST_DELETE,
+    ///TRACE request
     HTTPSERVER_REQUEST_TRACE,
+    ///CONNECT request
     HTTPSERVER_REQUEST_CONNECT,
 
 } HttpServer_Request;
 
+/**
+ * @ingroup httpServer_macros
+ * Macro to improve firmware legibility
+ */
 #define HTTPSERVER_STRING_VERSION_1_0        "HTTP/1.0"
+
+/**
+ * @ingroup httpServer_macros
+ * Macro to improve firmware legibility
+ */
 #define HTTPSERVER_STRING_VERSION_1_1        "HTTP/1.1"
 
+/**
+ * @ingroup httpServer_functions
+ */
 typedef enum
 {
+    ///Http version 1.0
     HTTPSERVER_VERSION_1_0,
+    ///Http version 1.1
     HTTPSERVER_VERSION_1_1,
 
 } HttpServer_Version;
@@ -141,48 +250,72 @@ typedef enum
 
 typedef struct _HttpServer_Message
 {
-    HttpServer_Request request;     /**< Specifies the request type received */
-    HttpServer_Version version;/**< Contains the version requested by client */
+    ///Request type enum
+    HttpServer_Request request;
+    ///Request version enum
+    HttpServer_Version version;
 
-    char uri[HTTPSERVER_MAX_URI_LENGTH+1];/**< The uri associated with the request */
+    ///Array of char where URI request is stored
+    char uri[HTTPSERVER_MAX_URI_LENGTH+1];
+    ///Array of char where headers of the request are stored
     char header[HTTPSERVER_HEADERS_MAX_LENGTH+1];
 
+    ///Enum which contains the response code
     HttpServer_ResponseCode responseCode;
 
 } HttpServer_Message, *HttpServer_MessageHandle;
 
 typedef struct _HttpServer_Client
 {
+    ///Receive buffer where receiving data is stored
     uint8_t rxBuffer[HTTPSERVER_RX_BUFFER_DIMENSION+1];
+    ///Trasmission buffer where sending data is store
     uint8_t txBuffer[HTTPSERVER_TX_BUFFER_DIMENSION+1];
+    ///Receive buffer index
     uint16_t rxIndex;
 
+    ///Incoming message are save as @ref HttpServer_Message
     HttpServer_Message message;
 
 } HttpServer_Client, *HttpServer_ClientHandle;
 
 typedef enum
 {
+    ///Everithing gone well
     HTTPSERVER_ERROR_OK,
+    ///Everithing gone well but an empty line is arrived
     HTTPSERVER_ERROR_OK_EMPTYLINE,
+    ///Wrong port
     HTTPSERVER_ERROR_WRONG_PORT,
+    ///Wrong socket numer
     HTTPSERVER_ERROR_WRONG_SOCKET_NUMBER,
+    ///Wrong client number
     HTTPSERVER_ERROR_WRONG_CLIENT_NUMBER,
+    ///Server not started
     HTTPSERVER_ERROR_OPEN_FAIL,
     HTTPSERVER_ERROR_WRONG_PARAM,
+    ///Timeout
     HTTPSERVER_ERROR_TIMEOUT,
+    ///Wrong request format
     HTTPSERVER_ERROR_WRONG_REQUEST_FORMAT,
+    ///URI too long
     HTTPSERVER_ERROR_URI_TOO_LONG,
 } HttpServer_Error;
 
 typedef struct _HttpServer_Device
 {
+    ///Port number.
     uint16_t port;
+    ///Socket number.
     uint8_t socketNumber;
+    ///The pointer to the EthernetConfig previously declared.
     EthernetSocket_Config* ethernetSocketConfig;
+    ///Array of @ref HttpServer_Client .
     HttpServer_Client clients [ETHERNET_MAX_LISTEN_CLIENT];
+    ///A void pointer which is going to pass to @ref performingCallback .
     void* appDevice;
 
+    ///The callback function it will be call if a request arrived.
     HttpServer_Error (*performingCallback)(void* appDevice,HttpServer_MessageHandle message);
 
 } HttpServer_Device, *HttpServer_DeviceHandle;
@@ -191,23 +324,28 @@ typedef struct _HttpServer_Device
 extern const char HttpServer_responseCode[40][36];
 
 /**
- * @param server The server which you want to start at the determined port, number and ethernet config
- * @param clients The array of clients which are to be cleared
- * @return HTTPSERVER_ERROR_OK if the socket was open and everything is ok, error otherwise
+ * @ingroup httpServer_functions
+ * This function starts the HTTP server.
+ * @param server The server which you want to start at the determined port, number and ethernet config.
+ * @return HTTPSERVER_ERROR_OK if the socket was open and everything is ok, error otherwise.
  */
 HttpServer_Error HttpServer_open (HttpServer_DeviceHandle dev);
 
 /**
- *@param server The server pointer which you have previously definited
+ * @ingroup httpServer_functions
+ * This is a polling function which MUST be called in loop.
+ * @param server The server pointer where you want to perform polling.
  */
 void HttpServer_poll (HttpServer_DeviceHandle dev);
 
 /**
- * @param dev The server pointer which you have previously definited
- * @param code The HTTP response code which it is going to send to the client
+ * @ingroup httpServer_functions
+ * This function sends a HTTP response to the selected client.
+ * @param dev The server pointer.
+ * @param code The HTTP response code which it is going to send to the client.
  * @param[in] The char pointer to the heades string which it is going to send
- * to the client
- * @param[in] The number of the client where the message it is going to send
+ * to the client.
+ * @param[in] The number of the client where the message it is going to send.
  */
 
 void HttpServer_sendResponse(HttpServer_DeviceHandle dev,
