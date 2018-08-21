@@ -146,7 +146,6 @@ typedef struct _HttpServer_Message
 
     char uri[HTTPSERVER_MAX_URI_LENGTH+1];/**< The uri associated with the request */
     char header[HTTPSERVER_HEADERS_MAX_LENGTH+1];
-//    char body[HTTPSERVER_BODY_MESSAGE_MAX_LENGTH+1];
 
     HttpServer_ResponseCode responseCode;
 
@@ -199,15 +198,17 @@ extern const char HttpServer_responseCode[40][36];
 HttpServer_Error HttpServer_open (HttpServer_DeviceHandle dev);
 
 /**
- *@param[in] server The server pointer which you have previously definited
- *@param[out] clients The array clients which is going to be filled
+ *@param server The server pointer which you have previously definited
  */
-void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout);
+void HttpServer_poll (HttpServer_DeviceHandle dev);
 
-
-void HttpServer_sendError (HttpServer_DeviceHandle dev,
-                           HttpServer_ResponseCode code,
-                           uint8_t client);
+/**
+ * @param dev The server pointer which you have previously definited
+ * @param code The HTTP response code which it is going to send to the client
+ * @param[in] The char pointer to the heades string which it is going to send
+ * to the client
+ * @param[in] The number of the client where the message it is going to send
+ */
 
 void HttpServer_sendResponse(HttpServer_DeviceHandle dev,
                              HttpServer_ResponseCode code,

@@ -80,6 +80,14 @@ typedef void (*HttpServer_Delay) (uint32_t);
 
 static HttpServer_CurrentTick HttpServer_currentTick;
 static HttpServer_Delay HttpServer_delay;
+/**
+ *@param server The server pointer which you have previously definited
+ *@param[out] buffer The buffer where the line is going to save
+ *@param maxLength The maximum buffer length
+ *@param timeout Timeout
+ *@param client The number of the listened client
+ *@param[out] The number of the character received including \r\n characters
+ */
 static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
                                             char* buffer,
                                             uint16_t maxLength,
@@ -87,6 +95,12 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
                                             uint8_t client,
                                             int16_t* received);
 
+/**
+ *@param server The server pointer which you have previously definited
+ *@param buffer The char pointer of the string it is going to parse
+ *@param length The length of the string
+ *@param client The client number where parsed message it is going to save
+ */
 static HttpServer_Error HttpServer_parseRequest (HttpServer_DeviceHandle dev,
                                                  char* buffer,
                                                  uint16_t length,
@@ -134,7 +148,7 @@ HttpServer_Error HttpServer_open (HttpServer_DeviceHandle dev)
     return HTTPSERVER_ERROR_OK;
 }
 
-void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
+void HttpServer_poll (HttpServer_DeviceHandle dev)
 {
     uint8_t data;
     int16_t received = 0;
@@ -145,8 +159,6 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
     char character [2];
 #endif
     uint8_t j = 0;
-
-
     HttpServer_Error error = HTTPSERVER_ERROR_OK;
 
     for (uint8_t i = 0; i < ETHERNET_MAX_LISTEN_CLIENT; i++)
@@ -172,6 +184,7 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
 #endif
         // Clear index
         received = 0;
+        dev->clients[i].rxIndex = 0;
         // Get first line
         error = HttpServer_getLine(dev,
                                    dev->clients[i].rxBuffer,
@@ -240,50 +253,50 @@ void HttpServer_poll (HttpServer_DeviceHandle dev, uint16_t timeout)
 
             if (error == HTTPSERVER_ERROR_OK)
             {
-                    if((received + j) < HTTPSERVER_HEADERS_MAX_LENGTH)
-                    {
-                        strncpy(&dev->clients[i].message.header[j],
-                                dev->clients[i].rxBuffer,
-                                received);
-                        j += received;
-                    }
-                    else
-                    {
-#ifdef OHILAB_HTTPSERVER_DEBUG
-                        Cli_sendMessage("HttpServer_poll:",
-                                        "header buffer too short",
-                                        CLI_MESSAGETYPE_INFO);
-#endif
-                    }
+                if((received + dev->clients[i].rxIndex) < HTTPSERVER_HEADERS_MAX_LENGTH)
+                {
+                    strncpy(&dev->clients[i].message.header[dev->clients[i].rxIndex],
+                            dev->clients[i].rxBuffer,
+                            received);
+                    dev->clients[i].rxIndex += received;
                 }
+                else
+                {
+#ifdef OHILAB_HTTPSERVER_DEBUG
+                    Cli_sendMessage("HttpServer_poll:",
+                                    "header buffer too short",
+                                    CLI_MESSAGETYPE_INFO);
+#endif
+                }
+            }
 
             //  If we received an empty line, this would indicate the end of the message
 
-                    if (received < 0)
-                    {
-                        // Performing the request
-                        //dev->performingCallback(dev->appDevice, &dev->clients[i].message);
+            if (received < 0)
+            {
+                // Performing the request
+                dev->performingCallback(dev->appDevice, &dev->clients[i].message);
 #ifdef OHILAB_HTTPSERVER_DEBUG
-                        Cli_sendMessage("HttpServer_poll:",
-                                        "performing the request",
-                                        CLI_MESSAGETYPE_INFO);
+                Cli_sendMessage("HttpServer_poll:",
+                                "performing the request",
+                                CLI_MESSAGETYPE_INFO);
 #endif
-                    // Just for test
-                        HttpServer_sendResponse(dev,
-                                                HTTPSERVER_RESPONSECODE_BADREQUEST,
-                                                "Content-Length: 0\r\nServer: OHILab\r\n\n\r",
-                                                i);
-                        EthernetServerSocket_disconnectClient(dev->socketNumber,
-                                                          i);
+                // Just for test
+                HttpServer_sendResponse(dev,
+                                        dev->clients[i].message.responseCode,
+                                        "Content-Length: 0\r\nServer: OHILab\r\n\n\r",
+                                        i);
+                EthernetServerSocket_disconnectClient(dev->socketNumber,
+                                                       i);
 #ifdef OHILAB_HTTPSERVER_DEBUG
-                        strncpy(cliBuffer, "client #",8);
-                        strncpy(&cliBuffer[7],character,1);
-                        strncpy(&cliBuffer[8], " is disconnected",15);
-                        strncpy(&cliBuffer[24], '\0',1);
-                        Cli_sendMessage("HttpServer_poll:",cliBuffer, CLI_MESSAGETYPE_INFO);
+                strncpy(cliBuffer, "client #",8);
+                strncpy(&cliBuffer[7],character,1);
+                strncpy(&cliBuffer[8], " is disconnected",15);
+                strncpy(&cliBuffer[24], '\0',1);
+                Cli_sendMessage("HttpServer_poll:",cliBuffer, CLI_MESSAGETYPE_INFO);
 #endif
-                    }
-        }while (received > 0);
+            }
+    }while (received > 0);
     }
 }
 
@@ -297,6 +310,7 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
     int16_t i = 0, count = 0;
     *received = -1; // Default
 
+    //Check if parameters make sense
     if ((buffer == NULL) || (maxLength == 0))
     {
 
@@ -310,6 +324,7 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
 
 
     uint32_t nextTimeout = HttpServer_currentTick() + timeout;
+    //Check if timeout occur or the received line is too long
     while ((nextTimeout > HttpServer_currentTick()) && (i < maxLength))
     {
         int16_t available = 0;
@@ -319,6 +334,7 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
             EthernetServerSocket_read(dev->socketNumber,client,&buffer[i]);
             if (buffer[i] == '\n')
                 {
+                // \n character is not counted
                     i--;
                     break;
                 }
@@ -326,7 +342,7 @@ static HttpServer_Error HttpServer_getLine (HttpServer_DeviceHandle dev,
         }
     }
 
-    // Check if timeout occur
+    // Check if timeout occur, if yes send the corrisponding error
     if (nextTimeout <= HttpServer_currentTick())
     {
         *received = -1;
@@ -451,21 +467,6 @@ static HttpServer_Error HttpServer_parseRequest (HttpServer_DeviceHandle dev,
     return HTTPSERVER_ERROR_OK;
 }
 
-void HttpServer_sendError (HttpServer_DeviceHandle dev,
-                           HttpServer_ResponseCode code,
-                           uint8_t client)
-{
-    uint16_t wrote = 0;
-    sprintf(dev->clients[client].txBuffer,
-            "HTTP/1.1 %d Error\r\nContent-Length: 0\r\nServer: OHILab\r\n\n\r",
-            code);
-    EthernetServerSocket_writeBytes(dev->socketNumber,
-                                    client,
-                                    dev->clients[client].txBuffer,
-                                    strlen(dev->clients[client].txBuffer),
-                                    &wrote);
-}
-
 void HttpServer_sendResponse(HttpServer_DeviceHandle dev,
                              HttpServer_ResponseCode code,
                              char* headers,
@@ -474,15 +475,17 @@ void HttpServer_sendResponse(HttpServer_DeviceHandle dev,
     uint8_t bufferLength = 0;
     uint8_t bufferResponseCodeLenght = 0;
     uint16_t wrote = 0;
+    //Add to the buffer the HTTP versionf
     sprintf(dev->clients[client].txBuffer,"HTTP/1.1 ");
     bufferLength = strlen(dev->clients[client].txBuffer);
+    //Add to the Buffer the response Code
     bufferResponseCodeLenght = strlen(HttpServer_responseCode[code]);
     strncpy(&dev->clients[client].txBuffer[bufferLength],
             &HttpServer_responseCode[code][0],
             bufferResponseCodeLenght);
-
+    //Add to the buffer the end line
     strncpy(&dev->clients[client].txBuffer[strlen(dev->clients[client].txBuffer)],"\r\n",2);
-
+    //Add to the buffer the headers
     strncpy(&dev->clients[client].txBuffer[strlen(dev->clients[client].txBuffer)],headers,strlen(headers));
     EthernetServerSocket_writeBytes(dev->socketNumber,
                                     client,
