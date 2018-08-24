@@ -236,6 +236,7 @@ void HttpServer_poll (HttpServer_DeviceHandle dev)
             //Send bad request and disconnect the client!
             HttpServer_sendResponse(dev, HTTPSERVER_RESPONSECODE_BADREQUEST,
                                     "Content-Length: 0\r\nServer: OHILab\r\n\n\r",
+                                    "",
                                     i);
             EthernetServerSocket_disconnectClient(dev->socketNumber,
                                                   i);
@@ -283,8 +284,9 @@ void HttpServer_poll (HttpServer_DeviceHandle dev)
 
             if (received < 0)
             {
+#ifndef OHILAB_HTTPSERVER_MODULE_TEST
                 // Performing the request
-                dev->performingCallback(dev->appDevice, &dev->clients[i].message);
+                dev->performingCallback(dev->appDevice, &dev->clients[i].message, i);
 #ifdef OHILAB_HTTPSERVER_DEBUG
                 Cli_sendMessage("HttpServer_poll:",
                                 "performing the request",
@@ -293,8 +295,37 @@ void HttpServer_poll (HttpServer_DeviceHandle dev)
                 // Just for test
                 HttpServer_sendResponse(dev,
                                         dev->clients[i].message.responseCode,
-                                        "Content-Length: 0\r\nServer: OHILab\r\n\n\r",
+                                        dev->clients[i].message.header,
+                                        dev->clients[i].message.body,
                                         i);
+
+                memset(dev->clients[i].message.header,
+                        0,
+                        sizeof(dev->clients[i].message.header));
+                memset(dev->clients[i].message.body,
+                        0,
+                        sizeof(dev->clients[i].message.body));
+                memset(dev->clients[i].message.uri,
+                        0,
+                        sizeof(dev->clients[i].message.uri));
+
+                memset(dev->clients[i].txBuffer,
+                        0,
+                        sizeof(dev->clients[i].txBuffer));
+#endif
+#ifdef OHILAB_HTTPSERVER_MODULE_TEST
+#ifdef OHILAB_HTTPSERVER_DEBUG
+                Cli_sendMessage("HttpServer_poll:",
+                                "request received",
+                                CLI_MESSAGETYPE_INFO);
+#endif
+                // Just for test
+                HttpServer_sendResponse(dev,
+                                        HTTPSERVER_RESPONSECODE_BADREQUEST,
+                                        "Content-Length: 0\r\nServer: OHILab\r\n\n\r",
+                                        "",
+                                        i);
+#endif
                 EthernetServerSocket_disconnectClient(dev->socketNumber,
                                                        i);
 #ifdef OHILAB_HTTPSERVER_DEBUG
@@ -440,6 +471,7 @@ static HttpServer_Error HttpServer_parseRequest (HttpServer_DeviceHandle dev,
                     HttpServer_sendResponse(dev,
                                           HTTPSERVER_RESPONSECODE_REQUESTURITOOLARGE,
                                           "Content-Length: 0\r\nServer: OHILab\r\n\n\r",
+                                          "",
                                           client);
                     return HTTPSERVER_ERROR_URI_TOO_LONG;
 
@@ -479,6 +511,7 @@ static HttpServer_Error HttpServer_parseRequest (HttpServer_DeviceHandle dev,
 void HttpServer_sendResponse(HttpServer_DeviceHandle dev,
                              HttpServer_ResponseCode code,
                              char* headers,
+                             char* body,
                              uint8_t client)
 {
     uint8_t bufferLength = 0;
@@ -493,9 +526,20 @@ void HttpServer_sendResponse(HttpServer_DeviceHandle dev,
             &HttpServer_responseCode[code][0],
             bufferResponseCodeLenght);
     //Add to the buffer the end line
-    strncpy(&dev->clients[client].txBuffer[strlen(dev->clients[client].txBuffer)],"\r\n",2);
+    strncpy(&dev->clients[client].txBuffer[strlen(dev->clients[client].txBuffer)],
+            "\r\n",
+            2);
     //Add to the buffer the headers
-    strncpy(&dev->clients[client].txBuffer[strlen(dev->clients[client].txBuffer)],headers,strlen(headers));
+    strncpy(&dev->clients[client].txBuffer[strlen(dev->clients[client].txBuffer)],
+            headers,
+            strlen(headers));
+    strncpy(&dev->clients[client].txBuffer[strlen(dev->clients[client].txBuffer)],
+            "\r\n\r\n",
+            4);
+    //Add to the buffer the body
+    strncpy(&dev->clients[client].txBuffer[strlen(dev->clients[client].txBuffer)],
+            body,
+            strlen(body));
     EthernetServerSocket_writeBytes(dev->socketNumber,
                                     client,
                                     dev->clients[client].txBuffer,

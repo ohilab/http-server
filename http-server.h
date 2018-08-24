@@ -28,19 +28,190 @@
 /**
  * @mainpage HTTP/SERVER library with @a libohiboard
  *
- * This project...
+ * This library is developed in order to manage a simple
+ * HTTP server using the @a libohiboard, @a timer, @ethernet-serversocket libraries.
  *
  * @section changelog ChangeLog
  *
- * @li v1.0 of 2018/08/21 - First release
+ * @li v1.0.0 of 2018/08/24 - First release
  *
  * @section library External Library
  *
  * The library use the following external library
  * @li libohiboard https://github.com/ohilab/libohiboard a C framework for
  * NXP Kinetis microcontroller
- * @li ethern-socket https://github.com/ohilab/ethernet-socket a C
- * library to manage client/server socket
+ * @li timer https://github.com/warcomeb/timer a C library to
+ * create a timer based on PIT module of libohiboard
+ * @li KSX8081RNA https://github.com/Loccioni-Electronic/KSZ8081RNA
+ * @li CLI https://github.com/Loccioni-Electronic/cli
+ * @li ethernet-socketserver https://github.com/ohilab/ethernet-socket a C
+ * library to manage server socket
+ *
+ * @section Example
+ * before starting with the example, which consist only of
+ * the main.c file you MUST create <BR>
+ * a board.h file in ~/http_example/Includes/board.h
+ * which contains all macros in order to improve
+ * code legibility.
+ * <BR>It could be something
+ * like this:
+ *
+ * @code
+ * #include "libohiboard.h"
+ *
+ *  //macros for timer module
+ *  #define WARCOMEB_TIMER_NUMBER        0
+ *  #define WARCOMEB_TIMER_FREQUENCY     1000
+ *  #define WARCOMEB_TIMER_CALLBACK      5
+ *
+ *  //macros for ethernet-serversocket module
+ *  #define ETHERNET_MAX_LISTEN_CLIENT 5
+ *  #define ETHERNET_MAX_SOCKET_BUFFER 1023
+ *  #define ETHERNET_MAX_SOCKET_CLIENT 5
+ *  #define ETHERNET_MAX_SOCKET_SERVER 5
+ *
+ *  //macros for http-server module
+ *  #define HTTPSERVER_MAX_URI_LENGTH           99
+ *  #define HTTPSERVER_HEADERS_MAX_LENGTH       1023
+ *  #define HTTPSERVER_BODY_MAX_LENGTH          127
+ *  #define HTTPSERVER_RX_BUFFER_DIMENSION      255
+ *  #define HTTPSERVER_TX_BUFFER_DIMENSION      255
+ *  #define HTTPSERVER_TIMEOUT                  3000
+ *  #define OHILAB_HTTPSERVER_MODULE_TEST       1
+ *
+ *  //macros for CLI module
+ *  #define PROJECT_NAME "iot-node_frdmK64"
+ *  #define PROJECT_COPYRIGTH "Copyright (C) 2018 AEA s.r.l. Loccioni Group - Elctronic Design Dept."
+ *  #define FW_TIME_VERSION 0
+ *  #define FW_VERSION_STRING "0.3"
+ *  #define PCB_VERSION_STRING "1.0"
+ *  #define LOCCIONI_CLI_DEV        OB_UART0
+ *  #define LOCCIONI_CLI_RX_PIN     UART_PINS_PTB16
+ *  #define LOCCIONI_CLI_TX_PIN     UART_PINS_PTB17
+ *  #define LOCCIONI_CLI_BAUDRATE   115200
+ *  #define LOCCIONI_CLI_ETHERNET   0
+ *
+ * @endcode
+ * <BR>
+ *
+ * While the main.c is developed only to test this library so every request
+ * have a 400 Bad Request error reply.<BR>
+ * It could be something like this
+ *
+ * @code
+ *  //Including all needed libraries
+ *  #include "libohiboard.h"
+ *  #include "timer/timer.h"
+ *  #include "KSZ8081RNA/KSZ8081RNA.h"
+ *  #include "cli/cli.h"
+ *  #include "http-server/http.server.h"
+ *  #include "ethernet-socket/ethernet-serversocket.h"
+ *
+ *  //declare netif struct type
+ *  struct netif nettest;
+ *
+ *  int main(void)
+ *  {
+ *      uint32_t fout;
+ *      uint32_t foutBus;
+ *      Clock_State clockState;
+ *
+ *      //Declaring EthernetSocket_Config struct
+ *      EthernetSocket_Config ethernetSocketConfig=
+ *      {
+ *          .timeout = 3000,
+ *          .delay = Timer_delay,
+ *          .currentTick = Timer_currentTick,
+ *      };
+ *
+ *      //Declaring HttpServer_Device
+ *      HttpServer_Device httpServer=
+ *      {
+ *          .port = 80,
+ *          .socketNumber = 0,
+ *          .ethernetSocketConfig = &ethernetSocketConfig,
+ *      };
+ *
+ *      //Declaring ClockConfig struct
+ *      Clock_Config clockConfig =
+ *      {
+ *          .source         = CLOCK_EXTERNAL,
+ *          .fext           = 50000000,
+ *          .foutSys        = 120000000,
+ *          .busDivider     = 2,
+ *          .flexbusDivider = 4,
+ *          .flashDivider   = 6,
+ *      };
+ *
+ *      // Enable Clock
+ *      System_Errors  error = Clock_Init(&clockConfig);
+ *
+ *      // JUST FOR DEBUG
+ *      clockState = Clock_getCurrentState();
+ *      fout = Clock_getFrequency (CLOCK_SYSTEM);
+ *      foutBus = Clock_getFrequency (CLOCK_BUS);
+ *
+ *      // Enable all ports
+ *      SIM_SCGC5 |= SIM_SCGC5_PORTA_MASK |
+ *                   SIM_SCGC5_PORTB_MASK |
+ *                   SIM_SCGC5_PORTC_MASK |
+ *                   SIM_SCGC5_PORTD_MASK |
+ *                   SIM_SCGC5_PORTE_MASK;
+ *
+ *      // Network configurations
+ *      Ethernet_NetworkConfig netConfig;
+ *
+ *      // fill net config
+ *      IP4_ADDR(&netConfig.ip,192,168,1,6);
+ *      IP4_ADDR(&netConfig.mask,255,255,255,0);
+ *      IP4_ADDR(&netConfig.gateway,192,168,1,1);
+ *      ETHERNET_MAC_ADDR(&netConfig.mac,0x00,0xCF,0x52,0x35,0x00,0x01);
+ *
+ *      netConfig.phyCallback           = KSZ8081RNA_init;
+ *      netConfig.timerCallback         = Timer_currentTick;
+ *      netConfig.netif_link_callback   = 0;
+ *      netConfig.netif_status_callback = 0;
+ *
+ *      //Just for test
+ *      Gpio_config(GPIO_PINS_PTB22,GPIO_PINS_OUTPUT);
+ *      Gpio_config(GPIO_PINS_PTE26,GPIO_PINS_OUTPUT);
+ *      Gpio_config(GPIO_PINS_PTB21,GPIO_PINS_OUTPUT);
+ *
+ *      //The default value is clear, in this way RGB led
+ *      //will be OFF
+ *      Gpio_set(GPIO_PINS_PTB22);
+ *      Gpio_set(GPIO_PINS_PTE26);
+ *      Gpio_set(GPIO_PINS_PTB21);
+ *
+ *      //timer initialization
+ *      Timer_init();
+ *
+ *      //Ethernet server socket initialization
+ *      Ethernet_networkConfig(&nettest, &netConfig);
+ *
+ *      //Http server initialization
+ *      HttpServer_open(&httpServer);
+ *
+ *      //Turn the red LED on, now we can send some HTTP request
+ *      Gpio_clear(GPIO_PINS_PTB22);
+ *
+ *     while(1)
+ *     {
+ *         sys_check_timeouts();
+ *
+ *         //A small delay
+ *         Timer_delay(100);
+ *
+ *         //CLI polling function
+ *         Cli_check();
+ *
+ *         //HTTP server polling function to detect request
+ *         HttpServer_poll(&httpServer);
+ *
+ *      }
+ *      return 0;
+ *  }
+ * @endcode
  *
  * @section thanksto Thanks to...
  * @li Marco Giammarini
@@ -54,7 +225,7 @@
 #define OHILAB_HTTPSERVER_LIBRARY_VERSION_M   1
 #define OHILAB_HTTPSERVER_LIBRARY_VERSION_m   0
 #define OHILAB_HTTPSERVER_LIBRARY_VERSION_bug 0
-#define OHILAB_HTTPSERVER_LIBRARY_TIME        0
+#define OHILAB_HTTPSERVER_LIBRARY_TIME        1535124886
 
 #include "libohiboard.h"
 //Ethernet server socket
@@ -94,6 +265,15 @@
 #ifndef HTTPSERVER_HEADERS_MAX_LENGTH
 #define HTTPSERVER_HEADERS_MAX_LENGTH       1023
 #endif
+
+/**
+ * @ingroup httpServer_macros
+ * The max length of body which can be send to the client
+ */
+#ifndef HTTPSERVER_BODY_MAX_LENGTH
+#define HTTPSERVER_BODY_MAX_LENGTH          127
+#endif
+
 /**
  * @ingroup httpServer_macros
  * The max length of the receive buffer for each @ref HttpServer_Client.
@@ -262,6 +442,8 @@ typedef struct _HttpServer_Message
 
     ///Enum which contains the response code
     HttpServer_ResponseCode responseCode;
+    ///Array of char where body of the response are stored
+    char body[HTTPSERVER_BODY_MAX_LENGTH+1];
 
 } HttpServer_Message, *HttpServer_MessageHandle;
 
@@ -283,8 +465,6 @@ typedef enum
 {
     ///Everithing gone well
     HTTPSERVER_ERROR_OK,
-    ///Everithing gone well but an empty line is arrived
-    HTTPSERVER_ERROR_OK_EMPTYLINE,
     ///Wrong port
     HTTPSERVER_ERROR_WRONG_PORT,
     ///Wrong socket numer
@@ -293,13 +473,16 @@ typedef enum
     HTTPSERVER_ERROR_WRONG_CLIENT_NUMBER,
     ///Server not started
     HTTPSERVER_ERROR_OPEN_FAIL,
-    HTTPSERVER_ERROR_WRONG_PARAM,
     ///Timeout
     HTTPSERVER_ERROR_TIMEOUT,
     ///Wrong request format
     HTTPSERVER_ERROR_WRONG_REQUEST_FORMAT,
+    ///Everithing gone well but an empty line is arrived
+    HTTPSERVER_ERROR_OK_EMPTYLINE,
     ///URI too long
     HTTPSERVER_ERROR_URI_TOO_LONG,
+    HTTPSERVER_ERROR_WRONG_PARAM,
+
 } HttpServer_Error;
 
 typedef struct _HttpServer_Device
@@ -316,7 +499,9 @@ typedef struct _HttpServer_Device
     void* appDevice;
 
     ///The callback function it will be call if a request arrived.
-    HttpServer_Error (*performingCallback)(void* appDevice,HttpServer_MessageHandle message);
+    HttpServer_Error (*performingCallback)(void* appDevice,
+                                           HttpServer_MessageHandle message,
+                                           uint8_t clientNumber);
 
 } HttpServer_Device, *HttpServer_DeviceHandle;
 
@@ -343,7 +528,9 @@ void HttpServer_poll (HttpServer_DeviceHandle dev);
  * This function sends a HTTP response to the selected client.
  * @param dev The server pointer.
  * @param code The HTTP response code which it is going to send to the client.
- * @param[in] The char pointer to the heades string which it is going to send
+ * @param[in] The char pointer to the headers string which it is going to send
+ * to the client.
+ * @param[in] The char pointer to the body string which is going to send
  * to the client.
  * @param[in] The number of the client where the message it is going to send.
  */
@@ -351,5 +538,6 @@ void HttpServer_poll (HttpServer_DeviceHandle dev);
 void HttpServer_sendResponse(HttpServer_DeviceHandle dev,
                              HttpServer_ResponseCode code,
                              char* headers,
+                             char* body,
                              uint8_t client);
 #endif // __OHILAB_HTTPSERVER_H
